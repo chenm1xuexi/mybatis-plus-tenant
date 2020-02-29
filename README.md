@@ -13,3 +13,9 @@ com.feifei.mybatisplus.tenant.MybatisPlusTenantApplicationTests
 测试前卿首先执行resources/init_sql/init.sql中的文件
 
 默认数据源配置的数据库名为test_user
+
+针对不同的业务场景可能不需要用到租户隔离，可在执行的mapper文件的方法上加上注解
+`
+ @SqlParser(filter = true)
+`
+以此来过滤掉租户条件的添加
