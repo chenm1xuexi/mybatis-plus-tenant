@@ -27,3 +27,7 @@ CREATE TABLE `t_user`
   CHARACTER SET = utf8
   COLLATE = utf8_general_ci
   ROW_FORMAT = Dynamic;
+
+
+INSERT INTO `test_user`.`t_tenant`(`id`, `username`, `password`, `sys_id`, `organization_id`, `user_id`) VALUES (1, 'feifei', '123456', 'sysId', 'organizationId', 1);
+INSERT INTO `test_user`.`t_user`(`id`, `address`, `telephone`, `sys_id`, `organization_id`) VALUES (1, '湖北武汉', '13587116519', 'sysId', 'organizationId');
