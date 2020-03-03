@@ -51,7 +51,9 @@ com.feifei.mybatisplus.tenant.config.MyMetaObjectHandler
 
 mybatis-plus是对mybatis框架的一个拓展框架，拓展了很多实际场景中便捷的插件，我们可查看官网地址[mybatis-plus](https://mp.baomidou.com/guide/)
 
-** 作者闲话 **
+***
+
+***作者闲话***
 <br>
 不过万物皆有好坏，mybatis-plus在提供便捷开发功能的同时，也会存在一些不合理的地方，比如说mybatis的特性就是让我们开发人员将只要精力集中在
 sql语句的编写上，而不需要考虑ORM,结果映射等操作。
