@@ -2,16 +2,12 @@ package com.feifei.mybatisplus.tenant.config;
 
 import com.baomidou.mybatisplus.core.parser.AbstractJsqlParser;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
-import com.baomidou.mybatisplus.core.toolkit.ExceptionUtils;
 import com.baomidou.mybatisplus.core.toolkit.StringPool;
-import com.baomidou.mybatisplus.core.toolkit.StringUtils;
-import com.baomidou.mybatisplus.extension.plugins.tenant.TenantHandler;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
-import net.sf.jsqlparser.expression.Alias;
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.Parenthesis;
@@ -28,15 +24,16 @@ import net.sf.jsqlparser.util.cnfexpression.MultiAndExpression;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import static com.feifei.mybatisplus.tenant.config.MyTenantConstants.VALID_ORGANIZATION_ID;
+import static com.feifei.mybatisplus.tenant.config.MyTenantConstants.VALID_SYS_ID;
 
 /**
  * 自定义租户sql解析器 处理行级别的数据
  * <p>
  * JSqlPaser将所有的SQL语句抽象为Statement，Statement表示对数据库的一个操作。
  *
- * @author shixiongfei
+ * @author xiaofeifei
  * @date 2020-03-01
  * @since
  */
@@ -99,7 +96,7 @@ public class MyTenantSqlParser extends AbstractJsqlParser {
     }
 
     /**
-     * delete 语句处理
+     * delete 语句处理，一般采用逻辑删除，直接硬删除很少用到
      */
     @Override
     public void processDelete(Delete delete) {
@@ -121,6 +118,10 @@ public class MyTenantSqlParser extends AbstractJsqlParser {
         // 添加别名
         MultiAndExpression multiAndExpression = listAliasColumn(table);
         if (Objects.nonNull(where)) {
+            // 如果存在where条件且添加了sys_id 和 organization_id的条件过滤则不进行租户过滤
+            if (validSysAndOrgIsExists(where)) {
+                return where;
+            }
             if (where instanceof OrExpression) {
                 return new AndExpression(multiAndExpression, new Parenthesis(where));
             } else {
@@ -152,9 +153,11 @@ public class MyTenantSqlParser extends AbstractJsqlParser {
                 // 过滤退出执行
                 return;
             }
-            // 添加租户条件,这里的where主要看当前是否存在where查询条件
-            plainSelect.setWhere(builderExpression(plainSelect.getWhere(), fromTable));
+            // 判断当前sql是否存在where条件以及是否包含sys_id和organization_id，存在则跳过租户过滤
+            Expression where = plainSelect.getWhere();
 
+            // 添加租户条件,这里的where主要看当前是否存在where查询条件
+            plainSelect.setWhere(builderExpression(where, fromTable));
             // 这一步其实没必要，因为一直为false
             if (addColumn) {
                 plainSelect.getSelectItems().add(new SelectExpressionItem(new Column(tenantHandler.getTenantIdColumn())));
@@ -235,9 +238,15 @@ public class MyTenantSqlParser extends AbstractJsqlParser {
         appendExpression = processTableAlias4CustomizedTenantIdExpression(tenantExpression, table);
 
         // 如果当前查询不存在where条件则直接返回带有租户条件的条件表达式
-        if (currentExpression == null) {
+        if (Objects.isNull(currentExpression)) {
             return appendExpression;
         }
+
+        // 如果存在where条件且添加了sys_id 和 organization_id的条件过滤则不进行租户过滤
+        if (validSysAndOrgIsExists(currentExpression)) {
+            return currentExpression;
+        }
+
         if (currentExpression instanceof BinaryExpression) {
             BinaryExpression binaryExpression = (BinaryExpression) currentExpression;
             doExpression(binaryExpression.getLeftExpression());
@@ -291,25 +300,6 @@ public class MyTenantSqlParser extends AbstractJsqlParser {
      * @param table 表对象
      * @return 字段
      */
-    protected Column getAliasColumn(Table table) {
-        StringBuilder column = new StringBuilder();
-        if (null == table.getAlias()) {
-            column.append(table.getName());
-        } else {
-            column.append(table.getAlias().getName());
-        }
-        column.append(StringPool.DOT);
-        column.append(tenantHandler.getTenantIdColumn());
-        return new Column(column.toString());
-    }
-
-    /**
-     * 租户字段别名设置
-     * <p>tableName.tenantId 或 tableAlias.tenantId</p>
-     *
-     * @param table 表对象
-     * @return 字段
-     */
     protected MultiAndExpression listAliasColumn(Table table) {
         String tableName;
         if (Objects.isNull(table.getAlias())) {
@@ -326,5 +316,23 @@ public class MyTenantSqlParser extends AbstractJsqlParser {
         });
 
         return multiAndExpression;
+    }
+
+    /**
+     * 校验当前查询中是否包含系统id或组织id的校验，存在则过滤租户查询
+     *
+     * @param
+     * @return
+     * @author shixiongfei
+     * @date 2020-03-01
+     * @updateDate 2020-03-01
+     * @updatedBy shixiongfei
+     */
+    protected boolean validSysAndOrgIsExists(Expression expression) {
+        if (Objects.isNull(expression)) {
+            return false;
+        }
+        String sqlWhere = expression.toString();
+        return sqlWhere.contains(VALID_SYS_ID) || sqlWhere.contains(VALID_ORGANIZATION_ID);
     }
 }

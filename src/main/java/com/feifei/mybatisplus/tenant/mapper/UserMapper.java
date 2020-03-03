@@ -5,7 +5,7 @@ import com.feifei.mybatisplus.tenant.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * @author shixiongfei
+ * @author xiaofeifei
  * @date 2020-03-01
  * @since
  */

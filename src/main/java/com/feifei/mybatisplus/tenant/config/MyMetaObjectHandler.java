@@ -5,7 +5,9 @@ import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @author shixiongfei
+ * mybatis-plus字段自动填充插件
+ *
+ * @author xiaofeifei
  * @date 2020-03-01
  * @since
  */
@@ -20,6 +22,6 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-
+        // do nothing
     }
 }
